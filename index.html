@@ -1,0 +1,1126 @@
+import React, { useState, useEffect } from 'react';
+
+const MentalHealthAutomationDemo = () => {
+  const [activeTab, setActiveTab] = useState('era');
+  const [eraProcessing, setEraProcessing] = useState(false);
+  const [eraComplete, setEraComplete] = useState(false);
+  const [licenseDate, setLicenseDate] = useState('');
+  const [alertsTriggered, setAlertsTriggered] = useState(false);
+  const [alerts, setAlerts] = useState([]);
+  const [reportGenerating, setReportGenerating] = useState(false);
+  const [reportComplete, setReportComplete] = useState(false);
+  const [cfoData, setCfoData] = useState([]);
+  const [processingStep, setProcessingStep] = useState(0);
+
+  // Sample ERA 835 data that would come from insurance
+  const sampleERAData = [
+    { claimId: 'CLM-2024-0847', patient: 'J. Martinez', service: 'Individual Therapy (90834)', billed: 185.00, allowed: 165.00, paid: 132.00, status: 'Paid' },
+    { claimId: 'CLM-2024-0848', patient: 'R. Thompson', service: 'Psych Eval (90791)', billed: 275.00, allowed: 250.00, paid: 200.00, status: 'Paid' },
+    { claimId: 'CLM-2024-0849', patient: 'S. Williams', service: 'Group Therapy (90853)', billed: 75.00, allowed: 65.00, paid: 52.00, status: 'Paid' },
+    { claimId: 'CLM-2024-0850', patient: 'M. Chen', service: 'Family Therapy (90847)', billed: 195.00, allowed: 175.00, paid: 140.00, status: 'Pending' },
+  ];
+
+  const payrollSplits = {
+    'Dr. Sarah Mitchell': { rate: 0.55, claims: ['CLM-2024-0847', 'CLM-2024-0848'] },
+    'Dr. James Rivera': { rate: 0.50, claims: ['CLM-2024-0849'] },
+    'Dr. Emily Park': { rate: 0.52, claims: ['CLM-2024-0850'] },
+  };
+
+  const processERA = () => {
+    setEraProcessing(true);
+    setEraComplete(false);
+    setCfoData([]);
+    setProcessingStep(0);
+    
+    const steps = [1, 2, 3, 4];
+    steps.forEach((step, index) => {
+      setTimeout(() => {
+        setProcessingStep(step);
+        if (step === 4) {
+          setCfoData(sampleERAData);
+          setTimeout(() => {
+            setEraProcessing(false);
+            setEraComplete(true);
+          }, 500);
+        }
+      }, (index + 1) * 800);
+    });
+  };
+
+  const calculateProviderPay = (providerId) => {
+    const provider = payrollSplits[providerId];
+    const providerClaims = sampleERAData.filter(d => provider.claims.includes(d.claimId));
+    const totalPaid = providerClaims.reduce((sum, c) => sum + c.paid, 0);
+    return (totalPaid * provider.rate).toFixed(2);
+  };
+
+  const triggerAlerts = () => {
+    if (!licenseDate) return;
+    
+    setAlertsTriggered(false);
+    setAlerts([]);
+    
+    const inputDate = new Date(licenseDate);
+    const today = new Date();
+    const daysUntil = Math.ceil((inputDate - today) / (1000 * 60 * 60 * 24));
+    
+    const newAlerts = [];
+    
+    setTimeout(() => {
+      if (daysUntil <= 90) {
+        newAlerts.push({ type: '90-day', message: `90-day warning: License expires ${licenseDate}`, icon: '📅' });
+      }
+      if (daysUntil <= 60) {
+        newAlerts.push({ type: '60-day', message: `60-day alert: Schedule renewal NOW`, icon: '⚠️' });
+      }
+      if (daysUntil <= 30) {
+        newAlerts.push({ type: '30-day', message: `URGENT: License expires in ${daysUntil} days!`, icon: '🚨' });
+      }
+      if (daysUntil <= 0) {
+        newAlerts.push({ type: 'expired', message: `EXPIRED: License lapsed on ${licenseDate}`, icon: '❌' });
+      }
+      
+      if (newAlerts.length === 0) {
+        newAlerts.push({ type: 'ok', message: `License valid. Next check: 90 days before ${licenseDate}`, icon: '✅' });
+      }
+      
+      setAlerts(newAlerts);
+      setAlertsTriggered(true);
+    }, 600);
+  };
+
+  const generateReport = () => {
+    setReportGenerating(true);
+    setReportComplete(false);
+    
+    setTimeout(() => {
+      setReportGenerating(false);
+      setReportComplete(true);
+    }, 2500);
+  };
+
+  const totalCollected = sampleERAData.filter(d => d.status === 'Paid').reduce((sum, c) => sum + c.paid, 0);
+  const totalPending = sampleERAData.filter(d => d.status === 'Pending').reduce((sum, c) => sum + c.paid, 0);
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+      fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: '#e2e8f0',
+      padding: '24px',
+    }}>
+      {/* Header */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto 32px',
+        textAlign: 'center',
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: '100px',
+          padding: '8px 20px',
+          marginBottom: '20px',
+        }}>
+          <span style={{ fontSize: '14px', color: '#60a5fa', fontWeight: '500' }}>
+            RESULTANT AI • AUTOMATION DEMO
+          </span>
+        </div>
+        <h1 style={{
+          fontSize: '36px',
+          fontWeight: '700',
+          margin: '0 0 12px',
+          background: 'linear-gradient(135deg, #fff 0%, #94a3b8 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.02em',
+        }}>
+          Mental Health Practice Automation
+        </h1>
+        <p style={{
+          fontSize: '16px',
+          color: '#94a3b8',
+          margin: '0',
+          maxWidth: '600px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}>
+          HIPAA-compliant workflows powered by Make.com + Google Workspace
+        </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto 24px',
+        display: 'flex',
+        gap: '8px',
+        background: 'rgba(30, 41, 59, 0.5)',
+        padding: '6px',
+        borderRadius: '16px',
+        border: '1px solid rgba(148, 163, 184, 0.1)',
+      }}>
+        {[
+          { id: 'era', label: 'ERA Import', icon: '📥', desc: 'Claims Processing' },
+          { id: 'license', label: 'License Alerts', icon: '🔔', desc: 'Compliance Tracking' },
+          { id: 'report', label: 'PDF Reports', icon: '📊', desc: 'Monthly Generation' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              padding: '16px 20px',
+              background: activeTab === tab.id 
+                ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                : 'transparent',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>{tab.icon}</span>
+              <div>
+                <div style={{
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: activeTab === tab.id ? '#fff' : '#e2e8f0',
+                }}>
+                  {tab.label}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: activeTab === tab.id ? 'rgba(255,255,255,0.7)' : '#64748b',
+                }}>
+                  {tab.desc}
+                </div>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Content Area */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+      }}>
+        {/* ERA Import Tab */}
+        {activeTab === 'era' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px',
+          }}>
+            {/* Left Panel - ERA File Upload */}
+            <div style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              borderRadius: '20px',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              padding: '28px',
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <span style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                }}>
+                  1
+                </span>
+                ERA 835 File Import
+              </h3>
+              
+              {/* Simulated File Drop Zone */}
+              <div style={{
+                border: '2px dashed rgba(59, 130, 246, 0.4)',
+                borderRadius: '12px',
+                padding: '32px',
+                textAlign: 'center',
+                marginBottom: '20px',
+                background: 'rgba(59, 130, 246, 0.05)',
+              }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>📄</div>
+                <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '8px' }}>
+                  Sample ERA File Ready
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#64748b',
+                  fontFamily: 'monospace',
+                  background: 'rgba(0,0,0,0.3)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  display: 'inline-block',
+                }}>
+                  BlueCross_ERA_835_Nov2024.txt
+                </div>
+              </div>
+
+              <button
+                onClick={processERA}
+                disabled={eraProcessing}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: eraProcessing 
+                    ? 'rgba(59, 130, 246, 0.3)'
+                    : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: eraProcessing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}
+              >
+                {eraProcessing ? (
+                  <>
+                    <span style={{
+                      width: '18px',
+                      height: '18px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTopColor: '#fff',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                    }} />
+                    Processing via Make.com...
+                  </>
+                ) : (
+                  <>▶ Run ERA Import Automation</>
+                )}
+              </button>
+
+              {/* Processing Steps */}
+              {(eraProcessing || eraComplete) && (
+                <div style={{ marginTop: '24px' }}>
+                  {[
+                    { step: 1, label: 'Parsing ERA 835 format', icon: '📋' },
+                    { step: 2, label: 'Matching claim IDs', icon: '🔗' },
+                    { step: 3, label: 'Calculating adjustments', icon: '🧮' },
+                    { step: 4, label: 'Updating CFO Sheet', icon: '📊' },
+                  ].map(item => (
+                    <div
+                      key={item.step}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 0',
+                        opacity: processingStep >= item.step ? 1 : 0.3,
+                        transition: 'opacity 0.3s ease',
+                      }}
+                    >
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: processingStep >= item.step 
+                          ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                          : 'rgba(148, 163, 184, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                      }}>
+                        {processingStep >= item.step ? '✓' : item.step}
+                      </div>
+                      <span style={{ fontSize: '14px' }}>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right Panel - CFO Sheet Output */}
+            <div style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              borderRadius: '20px',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              padding: '28px',
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <span style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                }}>
+                  📊
+                </span>
+                CFO Sheet (Auto-Updated)
+              </h3>
+
+              {cfoData.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: '#64748b',
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📋</div>
+                  <div>Run ERA import to populate data</div>
+                </div>
+              ) : (
+                <>
+                  {/* Summary Cards */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px',
+                    marginBottom: '20px',
+                  }}>
+                    <div style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#10b981', marginBottom: '4px' }}>COLLECTED</div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#10b981' }}>
+                        ${totalCollected.toFixed(2)}
+                      </div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#f59e0b', marginBottom: '4px' }}>PENDING</div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#f59e0b' }}>
+                        ${totalPending.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Claims Table */}
+                  <div style={{
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    marginBottom: '20px',
+                  }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                          <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8', fontWeight: '500' }}>Claim</th>
+                          <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8', fontWeight: '500' }}>Service</th>
+                          <th style={{ padding: '12px', textAlign: 'right', color: '#94a3b8', fontWeight: '500' }}>Paid</th>
+                          <th style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontWeight: '500' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cfoData.map((row, i) => (
+                          <tr key={i} style={{ borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                            <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '11px' }}>{row.claimId}</td>
+                            <td style={{ padding: '12px' }}>{row.service.split(' ')[0]}</td>
+                            <td style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>${row.paid.toFixed(2)}</td>
+                            <td style={{ padding: '12px', textAlign: 'center' }}>
+                              <span style={{
+                                padding: '4px 10px',
+                                borderRadius: '100px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                background: row.status === 'Paid' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                                color: row.status === 'Paid' ? '#10b981' : '#f59e0b',
+                              }}>
+                                {row.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Payroll Splits */}
+                  <div style={{
+                    background: 'rgba(139, 92, 246, 0.1)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#a78bfa', marginBottom: '12px', fontWeight: '600' }}>
+                      AUTO-CALCULATED PAYROLL SPLITS
+                    </div>
+                    {Object.keys(payrollSplits).map(provider => (
+                      <div key={provider} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '8px 0',
+                        borderBottom: '1px solid rgba(139, 92, 246, 0.2)',
+                      }}>
+                        <span style={{ fontSize: '13px' }}>{provider}</span>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#a78bfa' }}>
+                          ${calculateProviderPay(provider)} ({(payrollSplits[provider].rate * 100)}%)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* License Alerts Tab */}
+        {activeTab === 'license' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px',
+          }}>
+            {/* Left Panel - Input */}
+            <div style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              borderRadius: '20px',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              padding: '28px',
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <span style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                }}>
+                  📋
+                </span>
+                License Tracker
+              </h3>
+
+              {/* Sample License List */}
+              <div style={{
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '20px',
+              }}>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                  ACTIVE LICENSES IN SYSTEM
+                </div>
+                {[
+                  { name: 'Dr. Sarah Mitchell', type: 'LCSW', state: 'CA' },
+                  { name: 'Dr. James Rivera', type: 'PhD', state: 'CA' },
+                  { name: 'Dr. Emily Park', type: 'LMFT', state: 'CA' },
+                ].map((lic, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottom: i < 2 ? '1px solid rgba(148, 163, 184, 0.1)' : 'none',
+                  }}>
+                    <span style={{ fontSize: '14px' }}>{lic.name}</span>
+                    <span style={{
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      background: 'rgba(59, 130, 246, 0.2)',
+                      borderRadius: '4px',
+                      color: '#60a5fa',
+                    }}>
+                      {lic.type} • {lic.state}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  color: '#94a3b8',
+                  marginBottom: '8px',
+                }}>
+                  Test Expiration Date
+                </label>
+                <input
+                  type="date"
+                  value={licenseDate}
+                  onChange={(e) => setLicenseDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: '10px',
+                    color: '#e2e8f0',
+                    fontSize: '15px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={triggerAlerts}
+                disabled={!licenseDate}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: !licenseDate 
+                    ? 'rgba(148, 163, 184, 0.2)'
+                    : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: !licenseDate ? 'not-allowed' : 'pointer',
+                }}
+              >
+                🔔 Trigger Alert Check
+              </button>
+
+              <div style={{
+                marginTop: '20px',
+                padding: '16px',
+                background: 'rgba(59, 130, 246, 0.1)',
+                borderRadius: '10px',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+              }}>
+                <div style={{ fontSize: '12px', color: '#60a5fa', fontWeight: '600', marginBottom: '8px' }}>
+                  AUTOMATION FLOW
+                </div>
+                <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.6' }}>
+                  Google Sheets → Make.com checks daily → Calendar event created → Email + Slack alert sent
+                </div>
+              </div>
+            </div>
+
+            {/* Right Panel - Alerts Output */}
+            <div style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              borderRadius: '20px',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              padding: '28px',
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <span style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                }}>
+                  🔔
+                </span>
+                Alert System Output
+              </h3>
+
+              {!alertsTriggered ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: '#64748b',
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🔕</div>
+                  <div>Select a date and trigger alert check</div>
+                </div>
+              ) : (
+                <div>
+                  {alerts.map((alert, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: alert.type === 'ok' 
+                          ? 'rgba(16, 185, 129, 0.1)'
+                          : alert.type === 'expired'
+                          ? 'rgba(239, 68, 68, 0.2)'
+                          : alert.type === '30-day'
+                          ? 'rgba(239, 68, 68, 0.15)'
+                          : 'rgba(245, 158, 11, 0.15)',
+                        border: `1px solid ${
+                          alert.type === 'ok' 
+                            ? 'rgba(16, 185, 129, 0.3)'
+                            : alert.type === 'expired' || alert.type === '30-day'
+                            ? 'rgba(239, 68, 68, 0.3)'
+                            : 'rgba(245, 158, 11, 0.3)'
+                        }`,
+                        borderRadius: '12px',
+                        padding: '16px',
+                        marginBottom: '12px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                      }}
+                    >
+                      <span style={{ fontSize: '24px' }}>{alert.icon}</span>
+                      <div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: alert.type === 'ok' ? '#10b981' : alert.type === 'expired' ? '#ef4444' : '#f59e0b',
+                          marginBottom: '4px',
+                        }}>
+                          {alert.type === 'ok' ? 'ALL CLEAR' : alert.type.toUpperCase() + ' ALERT'}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#e2e8f0' }}>
+                          {alert.message}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Simulated Actions */}
+                  <div style={{
+                    marginTop: '24px',
+                    padding: '16px',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '12px',
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                      AUTOMATED ACTIONS TRIGGERED
+                    </div>
+                    {[
+                      { action: 'Calendar event created', status: '✓' },
+                      { action: 'Email notification sent', status: '✓' },
+                      { action: 'Slack #compliance channel', status: '✓' },
+                    ].map((item, i) => (
+                      <div key={i} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '8px 0',
+                        fontSize: '13px',
+                      }}>
+                        <span style={{ color: '#10b981' }}>{item.status}</span>
+                        <span>{item.action}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PDF Report Tab */}
+        {activeTab === 'report' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1.2fr',
+            gap: '24px',
+          }}>
+            {/* Left Panel - Generator */}
+            <div style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              borderRadius: '20px',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              padding: '28px',
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <span style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                }}>
+                  📄
+                </span>
+                Monthly Report Generator
+              </h3>
+
+              <div style={{
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '20px',
+              }}>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                  REPORT CONFIGURATION
+                </div>
+                <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                  <strong>Period:</strong> November 2024
+                </div>
+                <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                  <strong>Data Sources:</strong> CFO Sheet, HR Tracker
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  <strong>AI Summary:</strong> Claude API via Make.com
+                </div>
+              </div>
+
+              <button
+                onClick={generateReport}
+                disabled={reportGenerating}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: reportGenerating 
+                    ? 'rgba(139, 92, 246, 0.3)'
+                    : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: reportGenerating ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}
+              >
+                {reportGenerating ? (
+                  <>
+                    <span style={{
+                      width: '18px',
+                      height: '18px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTopColor: '#fff',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                    }} />
+                    Generating with AI...
+                  </>
+                ) : (
+                  <>📊 Generate November Report</>
+                )}
+              </button>
+
+              {/* Automation Flow */}
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                background: 'rgba(139, 92, 246, 0.1)',
+                borderRadius: '10px',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+              }}>
+                <div style={{ fontSize: '12px', color: '#a78bfa', fontWeight: '600', marginBottom: '12px' }}>
+                  AUTOMATION PIPELINE
+                </div>
+                {[
+                  'Make.com triggers on 1st of month',
+                  'Pulls data from Google Sheets',
+                  'Sends to Claude API for summary',
+                  'Generates formatted PDF',
+                  'Saves to Google Drive',
+                  'Sends email notification',
+                ].map((step, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '6px 0',
+                    fontSize: '13px',
+                    color: '#94a3b8',
+                  }}>
+                    <span style={{
+                      width: '20px',
+                      height: '20px',
+                      background: 'rgba(139, 92, 246, 0.3)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      color: '#a78bfa',
+                    }}>
+                      {i + 1}
+                    </span>
+                    {step}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Panel - PDF Preview */}
+            <div style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              borderRadius: '20px',
+              border: '1px solid rgba(148, 163, 184, 0.1)',
+              padding: '28px',
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                  }}>
+                    PDF
+                  </span>
+                  Report Preview
+                </span>
+                {reportComplete && (
+                  <span style={{
+                    fontSize: '12px',
+                    padding: '6px 12px',
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    borderRadius: '100px',
+                    color: '#10b981',
+                  }}>
+                    ✓ Saved to Drive
+                  </span>
+                )}
+              </h3>
+
+              {!reportComplete ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '80px 20px',
+                  color: '#64748b',
+                  background: 'rgba(0,0,0,0.2)',
+                  borderRadius: '12px',
+                }}>
+                  {reportGenerating ? (
+                    <>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        border: '3px solid rgba(139, 92, 246, 0.3)',
+                        borderTopColor: '#8b5cf6',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        margin: '0 auto 16px',
+                      }} />
+                      <div style={{ color: '#a78bfa' }}>Generating report with AI summary...</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📄</div>
+                      <div>Click generate to create monthly report</div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '32px',
+                  color: '#1e293b',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+                }}>
+                  {/* PDF Header */}
+                  <div style={{
+                    borderBottom: '2px solid #3b82f6',
+                    paddingBottom: '16px',
+                    marginBottom: '20px',
+                  }}>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>
+                      CONFIDENTIAL - INTERNAL USE ONLY
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '700',
+                      margin: '0',
+                      color: '#0f172a',
+                    }}>
+                      Monthly Practice Report
+                    </h2>
+                    <div style={{ fontSize: '13px', color: '#64748b' }}>
+                      November 2024 | Wellness Mental Health Associates
+                    </div>
+                  </div>
+
+                  {/* AI Summary */}
+                  <div style={{
+                    background: '#f1f5f9',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '20px',
+                    borderLeft: '4px solid #8b5cf6',
+                  }}>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#8b5cf6',
+                      fontWeight: '600',
+                      marginBottom: '8px',
+                    }}>
+                      AI-GENERATED EXECUTIVE SUMMARY
+                    </div>
+                    <p style={{
+                      fontSize: '13px',
+                      lineHeight: '1.6',
+                      margin: '0',
+                      color: '#334155',
+                    }}>
+                      November showed strong performance with $524.00 in collections across 4 processed claims. 
+                      Dr. Mitchell led with the highest billable hours. One pending claim ($140) from Dr. Park 
+                      awaits insurance processing. All provider licenses remain compliant with no renewals due 
+                      within 90 days. Recommendation: Follow up on CLM-2024-0850 for payment acceleration.
+                    </p>
+                  </div>
+
+                  {/* Key Metrics */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: '12px',
+                    marginBottom: '20px',
+                  }}>
+                    {[
+                      { label: 'Total Revenue', value: '$524.00', color: '#10b981' },
+                      { label: 'Claims Processed', value: '4', color: '#3b82f6' },
+                      { label: 'Collection Rate', value: '94.2%', color: '#8b5cf6' },
+                    ].map((metric, i) => (
+                      <div key={i} style={{
+                        textAlign: 'center',
+                        padding: '12px',
+                        background: '#f8fafc',
+                        borderRadius: '6px',
+                      }}>
+                        <div style={{ fontSize: '20px', fontWeight: '700', color: metric.color }}>
+                          {metric.value}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          {metric.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Provider Summary */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: '#0f172a',
+                      marginBottom: '8px',
+                    }}>
+                      PROVIDER COMPENSATION
+                    </div>
+                    <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: '#f1f5f9' }}>
+                          <th style={{ padding: '8px', textAlign: 'left' }}>Provider</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Split</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td style={{ padding: '8px' }}>Dr. Sarah Mitchell</td><td style={{ padding: '8px', textAlign: 'right' }}>55%</td><td style={{ padding: '8px', textAlign: 'right', fontWeight: '600' }}>$182.60</td></tr>
+                        <tr style={{ background: '#f8fafc' }}><td style={{ padding: '8px' }}>Dr. James Rivera</td><td style={{ padding: '8px', textAlign: 'right' }}>50%</td><td style={{ padding: '8px', textAlign: 'right', fontWeight: '600' }}>$26.00</td></tr>
+                        <tr><td style={{ padding: '8px' }}>Dr. Emily Park</td><td style={{ padding: '8px', textAlign: 'right' }}>52%</td><td style={{ padding: '8px', textAlign: 'right', fontWeight: '600' }}>$72.80</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{
+                    borderTop: '1px solid #e2e8f0',
+                    paddingTop: '12px',
+                    fontSize: '10px',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span>Generated: Nov 30, 2024 12:00 AM</span>
+                    <span>Automated by ResultantAI</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '40px auto 0',
+        textAlign: 'center',
+        padding: '24px',
+        borderTop: '1px solid rgba(148, 163, 184, 0.1)',
+      }}>
+        <div style={{
+          fontSize: '14px',
+          color: '#64748b',
+          marginBottom: '8px',
+        }}>
+          Built by <strong style={{ color: '#e2e8f0' }}>Chris Mott</strong> • ResultantAI
+        </div>
+        <div style={{ fontSize: '12px', color: '#475569' }}>
+          Make.com + Google Workspace + Claude API | HIPAA-Compliant Architecture
+        </div>
+      </div>
+
+      {/* Keyframe animation */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+      `}</style>
+    </div>
+  );
+};
+
+export default MentalHealthAutomationDemo;
